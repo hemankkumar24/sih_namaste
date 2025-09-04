@@ -1,5 +1,6 @@
 const abhaService = require('../services/abhaService');
 const hprService = require('../services/hprService');
+const aadharService = require('../services/aadharService'); 
 const prisma = require('../lib/db');
 const jwtUtils = require('../utils/jwt');
 const hashUtils = require('../utils/hash');
@@ -60,6 +61,65 @@ const verifyAbhaOtp = async (req, res, next) => {
         });
     } catch (error) {
         logger.error(error, `Failed to verify ABHA OTP for txId: ${txId}`);
+        next(error);
+    }
+};
+
+const sendAadhaarOtp = async (req, res, next) => {
+    const { aadharNumber } = req.body;
+    try {
+        const { txId } = await aadharService.sendOtp(aadharNumber);
+        res.status(200).json({ txId });
+    } catch (error) {
+        logger.error(error, `Failed to send OTP to Aadhaar number.`);
+        next(error);
+    }
+};
+
+// --- ADDED: New function for verifying Aadhaar OTP ---
+const verifyAadhaarOtp = async (req, res, next) => {
+    const { txId, otp } = req.body;
+    try {
+        const patientData = await aadharService.verifyOtp(txId, otp);
+
+        let user = await prisma.user.findFirst({
+            where: { patientProfile: { aadharNumber: patientData.aadharNumber } },
+            include: { patientProfile: true },
+        });
+
+        if (!user) {
+            user = await prisma.user.create({
+                data: {
+                    name: patientData.name,
+                    role: 'PATIENT',
+                    patientProfile: {
+                        create: {
+                            aadharNumber: patientData.aadharNumber,
+                            demographics: patientData.demographics,
+                        },
+                    },
+                },
+                include: { patientProfile: true },
+            });
+        }
+
+        const { accessToken, refreshToken } = await jwtUtils.generateTokens({
+            id: user.id,
+            role: user.role,
+        });
+
+        res.status(200).json({
+            accessToken,
+            refreshToken,
+            user: {
+                id: user.id,
+                name: user.name,
+                role: user.role,
+                aadharNumber: user.patientProfile.aadharNumber,
+            },
+        });
+    } catch (error) {
+        logger.error(error, `Failed to verify Aadhaar OTP for txId: ${txId}`);
         next(error);
     }
 };
@@ -224,8 +284,10 @@ const logout = async (req, res, next) => {
 module.exports = {
     sendAbhaOtp,
     verifyAbhaOtp,
-    hprRegister, // <-- EXPORTED
-    hprLogin,    // <-- EXPORTED
+    sendAadhaarOtp,      // <-- EXPORTED
+    verifyAadhaarOtp,    // <-- EXPORTED
+    hprRegister,
+    hprLogin,
     refreshToken,
     logout,
 };

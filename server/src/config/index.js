@@ -35,6 +35,15 @@ const config = {
             verify: process.env.HPR_PATH_VERIFY,
         },
     },
+    // --- ADDED: Aadhaar config ---
+    aadhar: {
+        baseUrl: process.env.AADHAAR_BASE_URL,
+        apiKey: process.env.AADHAAR_API_KEY,
+        paths: {
+            sendOtp: process.env.AADHAAR_PATH_SEND_OTP,
+            verifyOtp: process.env.AADHAAR_PATH_VERIFY_OTP,
+        },
+    },
     logLevel: process.env.LOG_LEVEL || 'info',
 };
 

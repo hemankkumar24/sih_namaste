@@ -14,7 +14,20 @@ const verifyAbhaOtpSchema = z.object({
     }),
 });
 
-// --- ADDED: New HPR schemas for register and login ---
+// --- ADDED: New Aadhaar schemas ---
+const sendAadhaarOtpSchema = z.object({
+    body: z.object({
+        aadharNumber: z.string().length(12, 'Aadhaar number must be 12 digits.'),
+    }),
+});
+
+const verifyAadhaarOtpSchema = z.object({
+    body: z.object({
+        txId: z.string().min(1, 'Transaction ID is required.'),
+        otp: z.string().length(6, 'OTP must be 6 digits.'),
+    }),
+});
+
 const hprRegisterSchema = z.object({
     body: z.object({
         hprId: z.string().min(1, 'HPR ID is required.'),
@@ -72,8 +85,10 @@ const createConsultationSchema = z.object({
 module.exports = {
     sendAbhaOtpSchema,
     verifyAbhaOtpSchema,
-    hprRegisterSchema, // <-- EXPORTED
-    hprLoginSchema,    // <-- EXPORTED
+    sendAadhaarOtpSchema, // <-- EXPORTED
+    verifyAadhaarOtpSchema, // <-- EXPORTED
+    hprRegisterSchema,
+    hprLoginSchema,
     refreshTokenSchema,
     findPatientSchema,
     createConsultationSchema,

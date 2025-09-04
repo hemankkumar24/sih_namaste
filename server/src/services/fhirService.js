@@ -11,23 +11,31 @@ const { randomUUID } = require('crypto');
  */
 const createFhirBundle = ({ patientData, doctorData, diagnoses, medications }) => {
     const bundleId = randomUUID();
-    const patientResourceId = `Patient/${patientData.id}`;
-    const practitionerResourceId = `Practitioner/${doctorData.id}`;
-    const encounterResourceId = `Encounter/${randomUUID()}`;
-    const compositionResourceId = `Composition/${randomUUID()}`;
-    
     const now = new Date().toISOString();
 
     const resources = [];
+
+    // --- MODIFIED: Patient Resource Identifier Logic ---
+    const patientIdentifiers = [];
+    // Add ABHA number if it exists
+    if (patientData.abhaNumber) {
+        patientIdentifiers.push({
+            system: 'https://healthid.ndhm.gov.in',
+            value: patientData.abhaNumber
+        });
+    } else {
+        // Fallback to a local system identifier if no ABHA number
+        patientIdentifiers.push({
+            system: 'https://medlink.local/patient-id',
+            value: patientData.id
+        });
+    }
 
     // 1. Patient Resource
     const patientResource = {
         resourceType: 'Patient',
         id: patientData.id,
-        identifier: [{
-            system: 'https://healthid.ndhm.gov.in',
-            value: patientData.abhaNumber
-        }],
+        identifier: patientIdentifiers, // Use the flexible identifier array
         name: [{
             text: patientData.name
         }],
@@ -49,10 +57,11 @@ const createFhirBundle = ({ patientData, doctorData, diagnoses, medications }) =
     };
     resources.push({ fullUrl: `urn:uuid:${doctorData.id}`, resource: practitionerResource });
 
+    const encounterResourceId = randomUUID();
     // 3. Encounter Resource
     const encounterResource = {
         resourceType: 'Encounter',
-        id: encounterResourceId.split('/')[1],
+        id: encounterResourceId,
         status: 'finished',
         class: {
             system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode',
@@ -67,28 +76,18 @@ const createFhirBundle = ({ patientData, doctorData, diagnoses, medications }) =
             start: now
         }
     };
-    resources.push({ fullUrl: `urn:uuid:${encounterResource.split('/')[1]}`, resource: encounterResource });
+    resources.push({ fullUrl: `urn:uuid:${encounterResourceId}`, resource: encounterResource });
     
     const sectionEntries = [];
 
     // 4. Condition (Diagnoses) Resources
-    diagnoses.forEach((diag, index) => {
-        const conditionId = `Condition/${randomUUID()}`;
+    diagnoses.forEach((diag) => {
+        const conditionId = randomUUID();
         const conditionResource = {
             resourceType: 'Condition',
-            id: conditionId.split('/')[1],
-            clinicalStatus: {
-                coding: [{
-                    system: 'http://terminology.hl7.org/CodeSystem/condition-clinical',
-                    code: 'active'
-                }]
-            },
-            verificationStatus: {
-                coding: [{
-                    system: 'http://terminology.hl7.org/CodeSystem/condition-ver-status',
-                    code: 'confirmed'
-                }]
-            },
+            id: conditionId,
+            clinicalStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/condition-clinical', code: 'active' }] },
+            verificationStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/condition-ver-status', code: 'confirmed' }] },
             code: {
                 coding: diag.codes.map(c => ({
                     system: c.system,
@@ -98,39 +97,40 @@ const createFhirBundle = ({ patientData, doctorData, diagnoses, medications }) =
                 text: diag.name
             },
             subject: { reference: `urn:uuid:${patientData.id}` },
-            encounter: { reference: `urn:uuid:${encounterResource.split('/')[1]}` }
+            encounter: { reference: `urn:uuid:${encounterResourceId}` }
         };
-        resources.push({ fullUrl: `urn:uuid:${conditionId.split('/')[1]}`, resource: conditionResource });
-        sectionEntries.push({ reference: `urn:uuid:${conditionId.split('/')[1]}` });
+        resources.push({ fullUrl: `urn:uuid:${conditionId}`, resource: conditionResource });
+        sectionEntries.push({ reference: `urn:uuid:${conditionId}` });
     });
 
     // 5. MedicationRequest Resources
-    medications.forEach((med, index) => {
-        const medRequestId = `MedicationRequest/${randomUUID()}`;
+    medications.forEach((med) => {
+        const medRequestId = randomUUID();
         const medRequestResource = {
             resourceType: 'MedicationRequest',
-            id: medRequestId.split('/')[1],
+            id: medRequestId,
             status: 'active',
             intent: 'order',
             medicationCodeableConcept: {
                 text: med.name
             },
             subject: { reference: `urn:uuid:${patientData.id}` },
-            encounter: { reference: `urn:uuid:${encounterResource.split('/')[1]}` },
+            encounter: { reference: `urn:uuid:${encounterResourceId}` },
             authoredOn: now,
             requester: { reference: `urn:uuid:${doctorData.id}` },
             dosageInstruction: [{
                 text: `${med.dosage}, ${med.frequency} for ${med.duration}`
             }]
         };
-        resources.push({ fullUrl: `urn:uuid:${medRequestId.split('/')[1]}`, resource: medRequestResource });
-        sectionEntries.push({ reference: `urn:uuid:${medRequestId.split('/')[1]}` });
+        resources.push({ fullUrl: `urn:uuid:${medRequestId}`, resource: medRequestResource });
+        sectionEntries.push({ reference: `urn:uuid:${medRequestId}` });
     });
 
+    const compositionResourceId = randomUUID();
     // 6. Composition Resource (to tie it all together)
     const compositionResource = {
         resourceType: 'Composition',
-        id: compositionResourceId.split('/')[1],
+        id: compositionResourceId,
         status: 'final',
         type: {
             coding: [{
@@ -143,13 +143,13 @@ const createFhirBundle = ({ patientData, doctorData, diagnoses, medications }) =
         author: [{ reference: `urn:uuid:${doctorData.id}` }],
         title: 'Consultation Record',
         subject: { reference: `urn:uuid:${patientData.id}` },
-        encounter: { reference: `urn:uuid:${encounterResource.split('/')[1]}` },
+        encounter: { reference: `urn:uuid:${encounterResourceId}` },
         section: [{
             title: 'Clinical Findings and Plan',
             entry: sectionEntries
         }]
     };
-    resources.push({ fullUrl: `urn:uuid:${compositionResourceId.split('/')[1]}`, resource: compositionResource });
+    resources.push({ fullUrl: `urn:uuid:${compositionResourceId}`, resource: compositionResource });
 
 
     const bundle = {
