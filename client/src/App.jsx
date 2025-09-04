@@ -1,10 +1,14 @@
 import React from 'react'
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import SignUp from './components/SignUp'
 
 const App = () => {
   return (
-    <div>
-      
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/signup" element={<SignUp />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
