@@ -4,9 +4,10 @@ const validate = require('../middleware/validate');
 const {
     sendAbhaOtpSchema,
     verifyAbhaOtpSchema,
-    verifyHprSchema,
+    hprRegisterSchema, // <-- ADDED
+    hprLoginSchema,    // <-- ADDED
     refreshTokenSchema,
-} = require('../utils/validators');
+} = require('../utils/validator');
 const rateLimiter = require('../middleware/rateLimit');
 const authMiddleware = require('../middleware/authMiddleware');
 
@@ -14,7 +15,11 @@ const router = express.Router();
 
 router.post('/abha/send-otp', rateLimiter.auth, validate(sendAbhaOtpSchema), authController.sendAbhaOtp);
 router.post('/abha/verify-otp', rateLimiter.auth, validate(verifyAbhaOtpSchema), authController.verifyAbhaOtp);
-router.post('/hpr/verify', rateLimiter.auth, validate(verifyHprSchema), authController.verifyHpr);
+
+// --- MODIFIED: Doctor routes now separated for register and login ---
+router.post('/hpr/register', rateLimiter.auth, validate(hprRegisterSchema), authController.hprRegister);
+router.post('/hpr/login', rateLimiter.auth, validate(hprLoginSchema), authController.hprLogin);
+
 router.post('/refresh', rateLimiter.auth, validate(refreshTokenSchema), authController.refreshToken);
 router.post('/logout', authMiddleware, authController.logout);
 

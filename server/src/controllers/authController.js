@@ -64,37 +64,96 @@ const verifyAbhaOtp = async (req, res, next) => {
     }
 };
 
-const verifyHpr = async (req, res, next) => {
-    const { hprId } = req.body;
+// --- ADDED: New function for Doctor Registration ---
+const hprRegister = async (req, res, next) => {
+    const { hprId, password } = req.body;
     try {
+        // 1. Verify doctor's status with the HPR service
         const doctorData = await hprService.verifyHprId(hprId);
-
         if (!doctorData.isPracticing || !doctorData.verified) {
-             return res.status(403).json({ message: 'Healthcare professional is not verified or not currently practicing.' });
+            return res.status(403).json({ message: 'Healthcare professional is not verified or not currently practicing.' });
         }
 
-        let user = await prisma.user.findFirst({
+        // 2. Check if a doctor with this HPR ID already exists
+        const existingUser = await prisma.user.findFirst({
             where: { doctorProfile: { hprId: doctorData.hprId } },
+        });
+
+        if (existingUser) {
+            return res.status(409).json({ message: 'A user with this HPR ID already exists. Please login.' });
+        }
+
+        // 3. Hash the password
+        const hashedPassword = await hashUtils.hashPassword(password);
+
+        // 4. Create the new user and profile
+        const user = await prisma.user.create({
+            data: {
+                name: doctorData.name,
+                role: 'DOCTOR',
+                password: hashedPassword, // Store the hashed password
+                doctorProfile: {
+                    create: {
+                        hprId: doctorData.hprId,
+                        speciality: doctorData.specialty,
+                        verified: doctorData.verified,
+                    },
+                },
+            },
+            include: { doctorProfile: true },
+        });
+
+        // 5. Generate and return tokens
+        const { accessToken, refreshToken } = await jwtUtils.generateTokens({
+            id: user.id,
+            role: user.role,
+            hprId: user.doctorProfile.hprId,
+        });
+
+        res.status(201).json({
+            accessToken,
+            refreshToken,
+            user: {
+                id: user.id,
+                name: user.name,
+                role: user.role,
+                hprId: user.doctorProfile.hprId,
+                speciality: user.doctorProfile.speciality,
+            },
+        });
+    } catch (error) {
+        logger.error(error, `HPR Registration failed for ${hprId}`);
+        next(error);
+    }
+};
+
+// --- ADDED: New function for Doctor Login ---
+const hprLogin = async (req, res, next) => {
+    const { hprId, password } = req.body;
+    try {
+        // 1. CRITICAL: Always check live status with HPR service first
+        const doctorData = await hprService.verifyHprId(hprId);
+        if (!doctorData.isPracticing || !doctorData.verified) {
+            return res.status(403).json({ message: 'HPR status is not active. Access denied.' });
+        }
+
+        // 2. Find the user in our database
+        const user = await prisma.user.findFirst({
+            where: { doctorProfile: { hprId: hprId } },
             include: { doctorProfile: true },
         });
 
         if (!user) {
-            user = await prisma.user.create({
-                data: {
-                    name: doctorData.name,
-                    role: 'DOCTOR',
-                    doctorProfile: {
-                        create: {
-                            hprId: doctorData.hprId,
-                            speciality: doctorData.specialty,
-                            verified: doctorData.verified,
-                        },
-                    },
-                },
-                include: { doctorProfile: true },
-            });
+            return res.status(404).json({ message: 'User not found. Please register first.' });
         }
 
+        // 3. Compare the provided password with the stored hash
+        const isPasswordValid = await hashUtils.comparePassword(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: 'Invalid HPR ID or password.' });
+        }
+
+        // 4. Generate and return tokens
         const { accessToken, refreshToken } = await jwtUtils.generateTokens({
             id: user.id,
             role: user.role,
@@ -112,14 +171,15 @@ const verifyHpr = async (req, res, next) => {
                 speciality: user.doctorProfile.speciality,
             },
         });
-
     } catch (error) {
-        logger.error(error, `Failed to verify HPR ID: ${hprId}`);
+        logger.error(error, `HPR Login failed for ${hprId}`);
         next(error);
     }
 };
 
+
 const refreshToken = async (req, res, next) => {
+    // ... (This function remains unchanged)
     const { refreshToken } = req.body;
     if (!refreshToken) {
         return res.status(401).json({ message: 'Refresh token is required' });
@@ -138,6 +198,7 @@ const refreshToken = async (req, res, next) => {
 };
 
 const logout = async (req, res, next) => {
+    // ... (This function remains unchanged)
     const { refreshToken } = req.body;
     const { id: userId } = req.user;
 
@@ -148,7 +209,6 @@ const logout = async (req, res, next) => {
                 where: { tokenHash },
             });
         } else {
-             // Fallback: if no refresh token is provided, log out all sessions for the user
             await prisma.refreshToken.deleteMany({
                 where: { userId },
             });
@@ -164,7 +224,8 @@ const logout = async (req, res, next) => {
 module.exports = {
     sendAbhaOtp,
     verifyAbhaOtp,
-    verifyHpr,
+    hprRegister, // <-- EXPORTED
+    hprLogin,    // <-- EXPORTED
     refreshToken,
     logout,
 };

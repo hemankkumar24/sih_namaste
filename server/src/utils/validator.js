@@ -14,9 +14,18 @@ const verifyAbhaOtpSchema = z.object({
     }),
 });
 
-const verifyHprSchema = z.object({
+// --- ADDED: New HPR schemas for register and login ---
+const hprRegisterSchema = z.object({
     body: z.object({
         hprId: z.string().min(1, 'HPR ID is required.'),
+        password: z.string().min(8, 'Password must be at least 8 characters long.'),
+    }),
+});
+
+const hprLoginSchema = z.object({
+    body: z.object({
+        hprId: z.string().min(1, 'HPR ID is required.'),
+        password: z.string().min(1, 'Password is required.'),
     }),
 });
 
@@ -63,7 +72,8 @@ const createConsultationSchema = z.object({
 module.exports = {
     sendAbhaOtpSchema,
     verifyAbhaOtpSchema,
-    verifyHprSchema,
+    hprRegisterSchema, // <-- EXPORTED
+    hprLoginSchema,    // <-- EXPORTED
     refreshTokenSchema,
     findPatientSchema,
     createConsultationSchema,
