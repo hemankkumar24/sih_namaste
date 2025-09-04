@@ -11,7 +11,9 @@ const router = express.Router();
 router.use(authMiddleware);
 router.use(roleMiddleware('DOCTOR'));
 
-router.get('/patients', validate(findPatientSchema), doctorController.findPatientByAbha);
+// --- FIXED: Updated to use the new controller function ---
+router.get('/patients', validate(findPatientSchema), doctorController.findPatient);
+
 router.post('/consultation', validate(createConsultationSchema), doctorController.createConsultation);
 router.get('/consultation/:id', doctorController.getConsultationById);
 

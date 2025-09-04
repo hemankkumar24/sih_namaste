@@ -14,7 +14,6 @@ const generateTokens = async (userPayload) => {
     const tokenHash = hashUtils.hashToken(refreshToken);
 
     const expiresAt = new Date();
-    // Parse duration string like "30d"
     const durationDays = parseInt(config.jwt.refreshExpiration, 10);
     expiresAt.setDate(expiresAt.getDate() + durationDays);
 
@@ -33,17 +32,15 @@ const generateTokens = async (userPayload) => {
 const rotateRefreshToken = async (oldRefreshToken) => {
     const oldTokenHash = hashUtils.hashToken(oldRefreshToken);
     
-    // Find and atomically delete the old token
     const oldTokenRecord = await prisma.refreshToken.findUnique({
         where: { tokenHash: oldTokenHash },
-        include: { user: { include: { patientProfile: true, doctorProfile: true } } },
+        include: { user: true }, // Simplified include
     });
 
     if (!oldTokenRecord) {
         throw new Error('Refresh token not found.');
     }
 
-    // Immediately delete the used token to prevent reuse
     await prisma.refreshToken.delete({ where: { id: oldTokenRecord.id } });
 
     if (oldTokenRecord.expiresAt < new Date()) {
@@ -52,12 +49,11 @@ const rotateRefreshToken = async (oldRefreshToken) => {
 
     const { user } = oldTokenRecord;
     
-    // Construct payload for new token
+    // --- FIXED: Reconstruct payload from the user record ---
+    // The payload is now consistent and simple: just id and role.
     const userPayload = {
         id: user.id,
         role: user.role,
-        ...(user.role === 'PATIENT' && { abhaNumber: user.patientProfile.abhaNumber }),
-        ...(user.role === 'DOCTOR' && { hprId: user.doctorProfile.hprId }),
     };
 
     const { accessToken: newAccessToken, refreshToken: newRefreshToken } = await generateTokens(userPayload);

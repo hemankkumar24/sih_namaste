@@ -7,6 +7,13 @@ const generateHtmlForPdf = (consultation) => {
     const diagnosesHtml = diagnoses.map(d => `<li><b>${d.name}</b>: ${d.codes.map(c => `<code>${c.system}:${c.code}</code>`).join(', ')}</li>`).join('');
     const medicationsHtml = medications.map(m => `<li><b>${m.name}</b>: ${m.dosage}, ${m.frequency} for ${m.duration}.</li>`).join('');
 
+    // --- FIXED: Conditional logic for patient identifier ---
+    const patientIdentifierHtml = patient.abhaNumber
+        ? `<tr><th>Patient ABHA Number</th><td>${patient.abhaNumber}</td></tr>`
+        : patient.aadharNumber
+        ? `<tr><th>Patient Aadhaar Number</th><td>${patient.aadharNumber}</td></tr>`
+        : '';
+
     return `
         <!DOCTYPE html>
         <html>
@@ -41,10 +48,7 @@ const generateHtmlForPdf = (consultation) => {
                         <th>Patient Name</th>
                         <td>${patient.user.name}</td>
                     </tr>
-                    <tr>
-                        <th>Patient ABHA Number</th>
-                        <td>${patient.abhaNumber}</td>
-                    </tr>
+                    ${patientIdentifierHtml}
                      <tr>
                         <th>Consultation Date</th>
                         <td>${new Date(date).toLocaleString()}</td>
@@ -78,7 +82,7 @@ const generateHtmlForPdf = (consultation) => {
             ` : ''}
 
             <div class="footer">
-                <p>This is a system-generated document.</p>
+                 <p>This is a system-generated document.</p>
             </div>
         </body>
         </html>
@@ -89,7 +93,6 @@ const generateConsultationPdf = async (consultation) => {
     let browser;
     try {
         logger.info(`Launching Puppeteer to generate PDF for consultation ${consultation.id}`);
-        // For production, use puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] }) inside Docker
         browser = await puppeteer.launch({
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox']

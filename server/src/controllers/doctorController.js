@@ -2,15 +2,20 @@ const prisma = require('../lib/db');
 const fhirService = require('../services/fhirService');
 const logger = require('../lib/logger');
 
-const findPatientByAbha = async (req, res, next) => {
-    const { abha } = req.query;
-    if (!abha) {
-        return res.status(400).json({ message: 'ABHA number query parameter is required.' });
+// --- FIXED: Renamed and generalized to find patient by any identifier ---
+const findPatient = async (req, res, next) => {
+    const { identifier, type } = req.query;
+    if (!identifier) {
+        return res.status(400).json({ message: 'Patient identifier query parameter is required.' });
     }
 
     try {
+        const whereClause = type === 'aadhar' 
+            ? { aadharNumber: identifier } 
+            : { abhaNumber: identifier };
+
         const patientProfile = await prisma.patientProfile.findUnique({
-            where: { abhaNumber: abha },
+            where: whereClause,
             include: {
                 user: {
                     select: { name: true },
@@ -24,26 +29,32 @@ const findPatientByAbha = async (req, res, next) => {
 
         res.status(200).json({
             abhaNumber: patientProfile.abhaNumber,
+            aadharNumber: patientProfile.aadharNumber,
             name: patientProfile.user.name,
             demographics: patientProfile.demographics,
         });
     } catch (error) {
-        logger.error(error, `Failed to find patient by ABHA: ${abha}`);
+        logger.error(error, `Failed to find patient by ${type}: ${identifier}`);
         next(error);
     }
 };
 
 const createConsultation = async (req, res, next) => {
-    const { patientAbha, diagnoses, medications, notes } = req.body;
+    // --- FIXED: Using generic identifier ---
+    const { patientIdentifier, identifierType, diagnoses, medications, notes } = req.body;
     const doctorId = req.user.id; // From authMiddleware
 
     try {
+        const whereClause = identifierType === 'aadhar'
+            ? { aadharNumber: patientIdentifier }
+            : { abhaNumber: patientIdentifier };
+
         const patient = await prisma.patientProfile.findUnique({
-            where: { abhaNumber: patientAbha },
+            where: whereClause,
             include: { user: true }
         });
         if (!patient) {
-            return res.status(404).json({ message: `Patient with ABHA number ${patientAbha} not found.` });
+            return res.status(404).json({ message: `Patient with ${identifierType} number ${patientIdentifier} not found.` });
         }
 
         const doctor = await prisma.doctorProfile.findUnique({
@@ -122,7 +133,7 @@ const getConsultationById = async (req, res, next) => {
 };
 
 module.exports = {
-    findPatientByAbha,
+    findPatient, // Renamed export
     createConsultation,
     getConsultationById
 };

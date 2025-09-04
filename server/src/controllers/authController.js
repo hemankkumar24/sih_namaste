@@ -1,6 +1,6 @@
 const abhaService = require('../services/abhaService');
 const hprService = require('../services/hprService');
-const aadharService = require('../services/aadharService'); 
+const aadharService = require('../services/aadharService'); // <-- IMPORTED
 const prisma = require('../lib/db');
 const jwtUtils = require('../utils/jwt');
 const hashUtils = require('../utils/hash');
@@ -43,10 +43,10 @@ const verifyAbhaOtp = async (req, res, next) => {
             });
         }
 
+        // --- FIXED: Standardized JWT payload ---
         const { accessToken, refreshToken } = await jwtUtils.generateTokens({
             id: user.id,
             role: user.role,
-            abhaNumber: user.patientProfile.abhaNumber,
         });
 
         res.status(200).json({
@@ -76,7 +76,6 @@ const sendAadhaarOtp = async (req, res, next) => {
     }
 };
 
-// --- ADDED: New function for verifying Aadhaar OTP ---
 const verifyAadhaarOtp = async (req, res, next) => {
     const { txId, otp } = req.body;
     try {
@@ -103,6 +102,7 @@ const verifyAadhaarOtp = async (req, res, next) => {
             });
         }
 
+        // --- FIXED: Standardized JWT payload ---
         const { accessToken, refreshToken } = await jwtUtils.generateTokens({
             id: user.id,
             role: user.role,
@@ -124,17 +124,14 @@ const verifyAadhaarOtp = async (req, res, next) => {
     }
 };
 
-// --- ADDED: New function for Doctor Registration ---
 const hprRegister = async (req, res, next) => {
     const { hprId, password } = req.body;
     try {
-        // 1. Verify doctor's status with the HPR service
         const doctorData = await hprService.verifyHprId(hprId);
         if (!doctorData.isPracticing || !doctorData.verified) {
             return res.status(403).json({ message: 'Healthcare professional is not verified or not currently practicing.' });
         }
 
-        // 2. Check if a doctor with this HPR ID already exists
         const existingUser = await prisma.user.findFirst({
             where: { doctorProfile: { hprId: doctorData.hprId } },
         });
@@ -143,15 +140,12 @@ const hprRegister = async (req, res, next) => {
             return res.status(409).json({ message: 'A user with this HPR ID already exists. Please login.' });
         }
 
-        // 3. Hash the password
         const hashedPassword = await hashUtils.hashPassword(password);
-
-        // 4. Create the new user and profile
         const user = await prisma.user.create({
             data: {
                 name: doctorData.name,
                 role: 'DOCTOR',
-                password: hashedPassword, // Store the hashed password
+                password: hashedPassword,
                 doctorProfile: {
                     create: {
                         hprId: doctorData.hprId,
@@ -163,11 +157,10 @@ const hprRegister = async (req, res, next) => {
             include: { doctorProfile: true },
         });
 
-        // 5. Generate and return tokens
+        // --- FIXED: Standardized JWT payload ---
         const { accessToken, refreshToken } = await jwtUtils.generateTokens({
             id: user.id,
             role: user.role,
-            hprId: user.doctorProfile.hprId,
         });
 
         res.status(201).json({
@@ -187,37 +180,32 @@ const hprRegister = async (req, res, next) => {
     }
 };
 
-// --- ADDED: New function for Doctor Login ---
 const hprLogin = async (req, res, next) => {
     const { hprId, password } = req.body;
     try {
-        // 1. CRITICAL: Always check live status with HPR service first
         const doctorData = await hprService.verifyHprId(hprId);
         if (!doctorData.isPracticing || !doctorData.verified) {
             return res.status(403).json({ message: 'HPR status is not active. Access denied.' });
         }
 
-        // 2. Find the user in our database
         const user = await prisma.user.findFirst({
             where: { doctorProfile: { hprId: hprId } },
             include: { doctorProfile: true },
         });
 
-        if (!user) {
-            return res.status(404).json({ message: 'User not found. Please register first.' });
+        if (!user || !user.password) {
+            return res.status(404).json({ message: 'User not found or password not set. Please register first.' });
         }
 
-        // 3. Compare the provided password with the stored hash
         const isPasswordValid = await hashUtils.comparePassword(password, user.password);
         if (!isPasswordValid) {
             return res.status(401).json({ message: 'Invalid HPR ID or password.' });
         }
 
-        // 4. Generate and return tokens
+        // --- FIXED: Standardized JWT payload ---
         const { accessToken, refreshToken } = await jwtUtils.generateTokens({
             id: user.id,
             role: user.role,
-            hprId: user.doctorProfile.hprId,
         });
 
         res.status(200).json({
@@ -237,9 +225,7 @@ const hprLogin = async (req, res, next) => {
     }
 };
 
-
 const refreshToken = async (req, res, next) => {
-    // ... (This function remains unchanged)
     const { refreshToken } = req.body;
     if (!refreshToken) {
         return res.status(401).json({ message: 'Refresh token is required' });
@@ -258,7 +244,6 @@ const refreshToken = async (req, res, next) => {
 };
 
 const logout = async (req, res, next) => {
-    // ... (This function remains unchanged)
     const { refreshToken } = req.body;
     const { id: userId } = req.user;
 
@@ -284,8 +269,8 @@ const logout = async (req, res, next) => {
 module.exports = {
     sendAbhaOtp,
     verifyAbhaOtp,
-    sendAadhaarOtp,      // <-- EXPORTED
-    verifyAadhaarOtp,    // <-- EXPORTED
+    sendAadhaarOtp,
+    verifyAadhaarOtp,
     hprRegister,
     hprLogin,
     refreshToken,
