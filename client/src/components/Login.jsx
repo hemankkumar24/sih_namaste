@@ -1,29 +1,29 @@
 import React, { useState } from 'react'
 import MainLogo from './MainLogo'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'
 
-const SignUp = () => {
-    const [aadharId, setAadharId] = useState("")
+const Login = () => {
+    const [abhaId, setAbhaId] = useState("")
     const [otp, setOTP] = useState(null)
     const [otpClicked, setOtpClciked] = useState(false)
     // for navigation
     const navigate = useNavigate();
 
     // simple redirecting to signup page
-    const rerouteToSignIn = () => {
-        navigate('/login');
+    const rerouteToSignUpClick = () => {
+        navigate('/signup');
     }
 
     const handleSubmit = (e) => {
         e.preventDefault();
         // fetch aadhar and otp from here
 
-        setAadharId('');
+        setAbhaId('');
         setOTP('');
     }
 
-  return (
-    <div className='w-full h-screen bg-neutral-200 '>
+    return (
+        <div className='w-full h-screen bg-neutral-200 '>
             <div className='flex justify-center items-center h-full w-full'>
                 <div className='w-128 h-128 bg-neutral-50 rounded-xl shadow-2xl p-10'>
                     {/* heading logo */}
@@ -32,38 +32,38 @@ const SignUp = () => {
                     </div>
 
                     {/* heading message (can change this) */}
-                    <div className='w-full flex justify-start pt-8 text-2xl font-semibold text-neutral-700'>
+                    <div className='w-full flex justify-start text-2xl pt-8 font-semibold text-neutral-700'>
                         Login With
                     </div>
 
                     {/* the buttons for switching states */}
                     <div className='pt-2 flex justify-between items-center gap-1'>
-                        <div className='w-1/2 flex justify-center text-xl border-sky-600
-                                    py-3 text-neutral-600 rounded-md border-2 hover:border-sky-700
-                                    hover:bg-sky-700 cursor-pointer' onClick={rerouteToSignIn}>
+                        <div className='w-1/2 flex justify-center text-xl bg-sky-600 border-sky-600
+                                    py-3 text-white rounded-md border-2 hover:border-sky-700
+                                    hover:bg-sky-700 cursor-pointer' 
+                                    >
                             ABHA ID
                         </div>
-                        <div className='w-1/2 flex justify-center text-xl border-2 bg-sky-600 border-sky-600 py-3
+                        <div className='w-1/2 flex justify-center text-xl border-2 border-sky-600 py-3
                                     rounded-md hover:bg-sky-700 hover:border-sky-700 cursor-pointer
-                                  text-white'>
+                                    hover:text-white text-neutral-600' onClick={rerouteToSignUpClick}>
                             AADHAR ID
                         </div>
                     </div>
 
                     {/* form starts here */}
                     <form action="#" method="post" className='pt-5 flex flex-col'>
-                        {/* aadhar id input field */}
-                        <input type="text" placeholder="Enter AADHAR ID"
+                        {/* abha id input field */}
+                        <input type="text" placeholder="Enter ABHA ID"
                             className="flex-1 px-4 py-3 outline-none text-neutral-600
-                            border-1 border-neutral-300 rounded-md" value={aadharId} 
-                            onChange={(e) => {setAadharId(e.target.value);}}
-                        />
+                    border-1 border-neutral-300 rounded-md" value={abhaId}
+                    onChange={(e) => {setAbhaId(e.target.value)}}/>
 
                         <div className="flex items-center justify-between border-1 border-neutral-300 rounded-md p-2 mt-3">
                             {/* otp input field */}
                             <input type="text" placeholder="Enter OTP"
-                                className="flex-1 px-2 py-1 outline-none text-neutral-600 focus:border-neutral-400" 
-                                value={otp} onChange={(e) => {setOTP(e.target.value);}}/>
+                                class="flex-1 px-2 py-1 outline-none text-neutral-600" 
+                                value={otp} onChange={(e) => {setOTP(e.target.value)}}/>
 
                             {/* send otp button idhar */}
                             <div
@@ -75,18 +75,19 @@ const SignUp = () => {
                         {/* login button */}
                         <button className='w-full bg-sky-600 py-3 px-5 mt-3 text-xl rounded-md text-white
                             hover:bg-sky-700 cursor-pointer' onClick={handleSubmit}>
-                            Sign Up</button>
+                            Login</button>
                     </form>
 
                     {/* ending message */}
                     <div className='w-full text-center pt-5'>
-                       Already Have an Abha ID? <span className='text-blue-600 
-                        hover:text-blue-700 cursor-pointer' onClick={rerouteToSignIn}>Login</span>
+                        Don't Have an Abha ID? <span className='text-blue-600 
+                        hover:text-blue-700 cursor-pointer'
+                        onClick={rerouteToSignUpClick}>Create One</span>
                     </div>
                 </div>
             </div>
         </div>
-  )
+    )
 }
 
-export default SignUp
+export default Login
