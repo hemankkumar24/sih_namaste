@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from langchain.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
-from query_database import infer_vector_search
+from query_database_bot.query_database import infer_vector_search
 
 load_dotenv()
 
@@ -45,10 +45,8 @@ def infer_chatbot(query):
     context = infer_vector_search(query)
     
     resp = chain.invoke({"query": query, "context": context})
-    print(resp.content)
+    return resp.content
 
-query_text = "What is the code for chest pain?"
-print("The query used: ", query_text)
-infer_chatbot(query_text)
+
 
 

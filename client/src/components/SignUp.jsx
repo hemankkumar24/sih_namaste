@@ -40,7 +40,7 @@ const SignUp = () => {
                     <div className='pt-2 flex justify-between items-center gap-1'>
                         <div className='w-1/2 flex justify-center text-xl border-sky-600
                                     py-3 text-neutral-600 rounded-md border-2 hover:border-sky-700
-                                    hover:bg-sky-700 cursor-pointer' onClick={rerouteToSignIn}>
+                                    hover:bg-sky-700 hover:text-white cursor-pointer' onClick={rerouteToSignIn}>
                             ABHA ID
                         </div>
                         <div className='w-1/2 flex justify-center text-xl border-2 bg-sky-600 border-sky-600 py-3
