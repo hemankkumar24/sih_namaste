@@ -38,7 +38,10 @@ const AIChat = () => {
     };
 
     return (
-    <div className="pt-10 mt-10 flex flex-col h-[600px] w-full mx-auto bg-neutral-100 rounded-lg shadow-xl">
+    <>
+    <div className='text-3xl mt-3'>AI Chat</div>
+    <div className="pt-10 mt-3 flex flex-col h-[600px] w-full mx-auto bg-neutral-100 rounded-lg shadow-xl">
+
       {/* Chat messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg, idx) => (
@@ -76,6 +79,7 @@ const AIChat = () => {
         </button>
       </div>
     </div>
+    </>
   );
 };
 

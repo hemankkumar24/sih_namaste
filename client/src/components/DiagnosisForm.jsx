@@ -24,7 +24,7 @@ const DiagnosisForm = ({ onSubmit, onCancel }) => {
       <div>
         <label className="block font-semibold mb-1">Diagnosis</label>
         <AutocompleteICDFull
-          csvFile="/csv/query_database.csv"
+          csvFile="/csv/query_database.csv" 
           onSelect={(row) => setDiagnosis(
       // Fill with all columns as "ColumnName: Value"
           `ICD11_Title: ${row['ICD11_Title']}, Ayurveda_NAMC_CODE: ${row['Ayurveda_NAMC_CODE']}, Siddha_NAMC_CODE: ${row['Siddha_NAMC_CODE']}, Unani_NUMC_CODE: ${row['Unani_NUMC_CODE']}, ICD11_Code: ${row['ICD11_Code']}`
