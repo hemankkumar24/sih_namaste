@@ -1,6 +1,6 @@
 import React from 'react'
+const Sidebar = ({ setActiveComponent  }) => {
 
-const Sidebar = () => {
   return (
     <div className='h-screen w-100 fixed'>
         <div className='h-full w-100 bg-blue-500 flex flex-col'>
@@ -11,13 +11,17 @@ const Sidebar = () => {
             </div>
             <div className='text-white text-xl px-20 py-7 h-[45%]'>
                 <div>
-                    <i className="ri-home-4-fill pr-3"></i> <span className='font-semibold'>Home</span>
+                    <i className="ri-home-4-fill pr-3 cursor-pointer"></i> <span className='font-semibold cursor-pointer'
+                    onClick={() => {setActiveComponent('home')}}>Home</span>
                 </div>
                 <div className='py-7'>
-                    <i className="ri-group-fill pr-3"></i> <span className='font-semibold'>Patients</span>
+                    <i className="ri-group-fill pr-3 cursor-pointer"></i> <span className='font-semibold cursor-pointer'
+                    onClick={() => {setActiveComponent('patient')}}>Patients</span>
                 </div>
                 <div>
-                    <i className="ri-robot-2-line pr-3"></i> <span className='font-semibold'>AI Chat</span>
+                    <i className="ri-robot-2-line pr-3 cursor-pointer"></i> <span className='font-semibold cursor-pointer' 
+                    onClick={() => {setActiveComponent('aichat')}}>
+                        AI Chat</span>
                 </div>
             </div>
 
