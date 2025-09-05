@@ -2,6 +2,79 @@ const prisma = require('../lib/db');
 const logger = require('../lib/logger');
 const pdfService = require('../services/pdfService');
 
+const getProfile = async (req, res, next) => {
+    const userId = req.user.id;
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                patientProfile: true
+            }
+        });
+
+        if (!user || !user.patientProfile) {
+            return res.status(404).json({ message: 'Patient profile not found.' });
+        }
+
+        res.status(200).json({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            abhaNumber: user.patientProfile.abhaNumber,
+            aadharNumber: user.patientProfile.aadharNumber,
+            demographics: user.patientProfile.demographics,
+            createdAt: user.createdAt,
+        });
+    } catch (error) {
+        logger.error(error, `Failed to get profile for user: ${userId}`);
+        next(error);
+    }
+};
+
+const updateProfile = async (req, res, next) => {
+    const userId = req.user.id;
+    const { name, email, demographics } = req.body;
+
+    try {
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                name,
+                email,
+                patientProfile: {
+                    update: {
+                        demographics
+                    }
+                }
+            },
+            include: {
+                patientProfile: true
+            }
+        });
+        
+        // Return the updated profile
+        res.status(200).json({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            abhaNumber: user.patientProfile.abhaNumber,
+            aadharNumber: user.patientProfile.aadharNumber,
+            demographics: user.patientProfile.demographics,
+        });
+
+    } catch (error) {
+        // Handle potential unique constraint violation for email
+        if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
+            return res.status(409).json({ message: 'Email address is already in use.' });
+        }
+        logger.error(error, `Failed to update profile for user: ${userId}`);
+        next(error);
+    }
+};
+
+
 const getConsultations = async (req, res, next) => {
     const patientId = req.user.id; // From authMiddleware
     const { page = 1, limit = 10, sort = 'date:desc' } = req.query;
@@ -124,6 +197,8 @@ const downloadConsultationPdf = async (req, res, next) => {
 };
 
 module.exports = {
+    getProfile,
+    updateProfile,
     getConsultations,
     getConsultationById,
     downloadConsultationPdf,

@@ -41,9 +41,21 @@ const refreshTokenSchema = z.object({
     }),
 });
 
-// --- Doctor Schemas ---
+// --- Patient Schemas ---
+const updatePatientProfileSchema = z.object({
+    body: z.object({
+        name: z.string().min(2, 'Name must be at least 2 characters long.').optional(),
+        email: z.string().email('Invalid email address.').optional(),
+        demographics: z.object({
+            yob: z.string().optional(),
+            gender: z.string().optional(),
+            mobile: z.string().optional()
+        }).optional()
+    })
+});
 
-// --- FIXED: Generic patient search schema ---
+
+// --- Doctor Schemas ---
 const findPatientSchema = z.object({
     query: z.object({
         identifier: z.string().min(1, 'Patient identifier query parameter is required.'),
@@ -67,7 +79,6 @@ const medicationSchema = z.object({
     duration: z.string(),
 });
 
-// --- FIXED: Generic consultation creation schema ---
 const createConsultationSchema = z.object({
     body: z.object({
         patientIdentifier: z.string().min(1, 'Patient identifier is required.'),
@@ -76,6 +87,21 @@ const createConsultationSchema = z.object({
         medications: z.array(medicationSchema).min(1, 'At least one medication is required.'),
         notes: z.string().optional(),
     }),
+});
+
+const updateDoctorProfileSchema = z.object({
+    body: z.object({
+        name: z.string().min(2, 'Name must be at least 2 characters long.').optional(),
+        email: z.string().email('Invalid email address.').optional(),
+        speciality: z.string().min(2, 'Speciality must be at least 2 characters long.').optional(),
+    })
+});
+
+// --- ML Schemas ---
+const mlQuerySchema = z.object({
+    body: z.object({
+        query: z.string().min(3, "Query must be at least 3 characters long.")
+    })
 });
 
 module.exports = {
@@ -88,4 +114,7 @@ module.exports = {
     refreshTokenSchema,
     findPatientSchema,
     createConsultationSchema,
+    updatePatientProfileSchema,
+    updateDoctorProfileSchema,
+    mlQuerySchema
 };

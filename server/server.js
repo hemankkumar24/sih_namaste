@@ -13,6 +13,7 @@ const patientRoutes = require('./src/routes/patient');
 const doctorRoutes = require('./src/routes/doctor');
 const terminologyRoutes = require('./src/routes/terminology');
 const healthRoutes = require('./src/routes/health');
+const mlRoutes = require('./src/routes/ml');
 
 const app = express();
 const server = http.createServer(app);
@@ -38,6 +39,7 @@ app.use('/patient', patientRoutes);
 app.use('/doctor', doctorRoutes);
 app.use('/terminology', terminologyRoutes);
 app.use('/health', healthRoutes);
+app.use('/ml', mlRoutes);
 
 // --- Error Handling ---
 app.use(errorHandler);

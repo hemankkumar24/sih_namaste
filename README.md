@@ -163,11 +163,11 @@ v
 
 ## 🛠️ Technology Stack
 
--   **Frontend:** React, React Router, Axios, Context API
+-   **Frontend:** React, React Router, Vite
 -   **Backend:** Node.js, Express.js
--   **Database:** MongoDB with Mongoose
+-   **Database:** PostgreSQL with Prisma ORM
 -   **Key APIs & Services:**
-    -   Ayushman Bharat Digital Mission (ABDM) for ABHA
+    -   Ayushman Bharat Digital Mission (ABDM) for ABHA & Aadhaar
     -   Healthcare Professional Registry (HPR)
     -   FHIR R4 Standards
     -   Google Vision AI (for OCR)
