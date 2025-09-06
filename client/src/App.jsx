@@ -1,26 +1,74 @@
-import React from 'react'
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import Login from './components/Login'
-import MainLogo from './components/MainLogo';
-import SignUp from './components/SignUp';
-import DoctorSignUp from './components/DoctorSignUp';
-import DoctorLogin from './components/DoctorLogin';
-import Dashboard from './components/Dashboard';
+import { Routes, Route } from 'react-router-dom';
+import Homepage from './pages/public/Homepage';
+import LoginGateway from './pages/public/LoginGateway';
+import PatientLogin from './pages/patient/PatientLogin';
+import DoctorLogin from './pages/doctor/DoctorLogin';
+import PatientDashboard from './pages/patient/PatientDashboard';
+import DoctorDashboard from './pages/doctor/DoctorDashboard';
+import NewConsultation from './pages/doctor/NewConsultation';
+import NotFound from './pages/NotFound';
+import ProtectedRoute from './components/ProtectedRoute';
+import PatientLayout from './components/PatientLayout';
+import DoctorLayout from './components/DoctorLayout';
+import DoctorChat from './pages/doctor/DoctorChat'; // <-- Import the new component
 
-const App = () => {
+function App() {
   return (
-    // idhar using routes
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<Homepage />} />
+      <Route path="/login" element={<LoginGateway />} />
+      <Route path="/login/patient" element={<PatientLogin />} />
+      <Route path="/login/doctor" element={<DoctorLogin />} />
 
-    <BrowserRouter>
-      <Routes>
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/doctorsignup" element={<DoctorSignUp />} />
-        <Route path="/doctorlogin" element={<DoctorLogin />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-      </Routes>
-    </BrowserRouter>
-  )
+      {/* Patient Routes */}
+      <Route
+        path="/patient/dashboard"
+        element={
+          <ProtectedRoute role="PATIENT">
+            <PatientLayout>
+              <PatientDashboard />
+            </PatientLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Doctor Routes */}
+      <Route
+        path="/doctor/dashboard"
+        element={
+          <ProtectedRoute role="DOCTOR">
+            <DoctorLayout>
+              <DoctorDashboard />
+            </DoctorLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/doctor/chat" // <-- Add the new route
+        element={
+          <ProtectedRoute role="DOCTOR">
+            <DoctorLayout>
+              <DoctorChat />
+            </DoctorLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/doctor/consultation/new"
+        element={
+          <ProtectedRoute role="DOCTOR">
+            <DoctorLayout>
+              <NewConsultation />
+            </DoctorLayout>
+          </ProtectedRoute>
+        }
+      />
+      
+      {/* Not Found */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
 }
 
-export default App
+export default App;
